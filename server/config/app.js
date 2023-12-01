@@ -4,6 +4,11 @@ let path = require('path');
 let cookieParser = require('cookie-parser');
 let logger = require('morgan');
 var router = express.Router();
+let session = require('express-session');
+let passport = require('passport');
+let passportLocal = require('passport-local');
+let passportStrategy = passportLocal.Strategy;
+let flash = require('connect-flash')
 
 let app = express();
 
@@ -21,10 +26,34 @@ app.use(express.static(path.join(__dirname, '../../node_modules')));
 let mongoose = require('mongoose');
 let mongoDB = mongoose.connection;
 let DB = require('./db');
+
+
 //mongoose.connect('mongodb://127.0.0.1:27017/BookLib');
 mongoose.connect(DB.URI);
 mongoDB.on('error',console.error.bind(console,'Connection Error'));
 mongoDB.once('open',()=>{console.log("Mongo DB is connected")});
+
+
+app.use(session({
+  secret:"SomeSecret",
+  saveUninitialized:false,
+  resave:false
+}));
+
+
+app.use(flash());
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+//create user model instance
+let userModel = require('../models/user');
+let user = userModel.User;
+
+//serialize and deserialize user info
+passport.serializeUser(user.serializeUser());
+passport.deserializeUser(user.deserializeUser());
+
 //mongoose.connect(DB.URI);
 let indexRouter = require('../routes/index');
 let usersRouter = require('../routes/users');
